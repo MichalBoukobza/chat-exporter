@@ -1,0 +1,19 @@
+{
+  "name": "chat-exporter",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Paste a ChatGPT / Claude / Gemini / DeepSeek share link and copy the whole conversation as Markdown, JSON or plain text.",
+  "bin": {
+    "chat-exporter": "cli.mjs"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node test/run.mjs",
+    "export": "node cli.mjs"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "license": "MIT"
+}

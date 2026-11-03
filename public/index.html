@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chat Exporter — copy a whole AI conversation</title>
+    <meta
+      name="description"
+      content="Paste a ChatGPT, Claude, Gemini or DeepSeek share link and copy the entire conversation as Markdown, JSON or plain text."
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="aurora" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="30" height="30" fill="none">
+            <rect x="3" y="5" width="20" height="15" rx="4" fill="currentColor" opacity=".18" />
+            <path d="M6 8.5h14M6 12.5h10M6 16.5h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <path d="M19 21l4 4 7-7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <div>
+          <h1>Chat Exporter</h1>
+          <p>Paste a share link — copy the entire conversation.</p>
+        </div>
+      </div>
+      <a class="ghost-link" href="#capture">Private chat? Capture from browser →</a>
+    </header>
+
+    <main>
+      <section class="card export-card" aria-labelledby="export-heading">
+        <h2 id="export-heading" class="sr-only">Export a conversation</h2>
+        <form id="export-form" autocomplete="off">
+          <label class="field-label" for="url">Conversation link</label>
+          <div class="input-row">
+            <input
+              id="url"
+              name="url"
+              type="text"
+              spellcheck="false"
+              inputmode="url"
+              placeholder="https://chatgpt.com/share/…"
+              aria-describedby="detected-hint"
+            />
+            <button type="button" class="btn btn-quiet" id="paste-btn" title="Paste from clipboard">Paste</button>
+          </div>
+
+          <div class="controls-row">
+            <label class="select-wrap">
+              <span>Site</span>
+              <select id="provider">
+                <option value="auto" selected>Detect automatically</option>
+                <option value="chatgpt">ChatGPT</option>
+                <option value="claude">Claude</option>
+                <option value="gemini">Gemini</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="generic">Other site</option>
+              </select>
+            </label>
+
+            <label class="check">
+              <input type="checkbox" id="allow-any" />
+              <span>Allow any site</span>
+            </label>
+
+            <label class="check">
+              <input type="checkbox" id="auto-copy" checked />
+              <span>Copy after export</span>
+            </label>
+
+            <button class="btn btn-primary" id="export-btn" type="submit">
+              <span class="btn-label">Export conversation</span>
+              <span class="spinner" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <p class="hint-line" id="detected-hint">
+            Works with public share links. Private chats stay private — use browser capture instead.
+          </p>
+        </form>
+
+        <div id="status" class="status" hidden></div>
+      </section>
+
+      <section id="result" class="result" hidden aria-live="polite">
+        <div class="card result-head">
+          <div class="result-identity">
+            <div class="result-badges">
+              <span id="result-provider" class="badge"></span>
+              <span id="result-method" class="badge badge-muted"></span>
+            </div>
+            <h2 id="result-title">Untitled conversation</h2>
+            <p class="meta" id="result-meta"></p>
+          </div>
+          <div class="result-actions">
+            <button class="btn btn-primary" id="copy-md" type="button">Copy Markdown</button>
+            <button class="btn btn-quiet" id="copy-json" type="button">Copy JSON</button>
+            <div class="downloads" role="group" aria-label="Download">
+              <button class="btn btn-chip" data-download="md" type="button">.md</button>
+              <button class="btn btn-chip" data-download="txt" type="button">.txt</button>
+              <button class="btn btn-chip" data-download="json" type="button">.json</button>
+            </div>
+          </div>
+        </div>
+
+        <p class="result-note" id="result-note" hidden></p>
+        <div id="messages" class="messages"></div>
+      </section>
+
+      <section id="error" class="card error-card" hidden aria-live="assertive">
+        <div class="error-head">
+          <span class="error-icon" aria-hidden="true">!</span>
+          <div>
+            <h2 id="error-title">Export failed</h2>
+            <p id="error-message"></p>
+          </div>
+        </div>
+        <p id="error-hint" class="error-hint" hidden></p>
+        <ul id="error-suggestions" class="suggestions" hidden></ul>
+        <details id="error-attempts-wrap" class="attempts" hidden>
+          <summary>What I tried</summary>
+          <table>
+            <thead>
+              <tr><th>Step</th><th>Result</th></tr>
+            </thead>
+            <tbody id="error-attempts"></tbody>
+          </table>
+        </details>
+        <button class="btn btn-quiet" id="error-capture" type="button">Use browser capture instead ↓</button>
+      </section>
+
+      <section id="capture" class="card capture-card" aria-labelledby="capture-heading">
+        <div class="capture-intro">
+          <h2 id="capture-heading">Capture from your browser</h2>
+          <p>
+            Some conversations only exist behind your login, or the site blocks server requests. These three options work
+            everywhere, because the browser already has the page open.
+          </p>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Capture method">
+          <button class="tab is-active" role="tab" aria-selected="true" data-tab="bookmarklet" type="button">One-click capture</button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="html" type="button">Saved page HTML</button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="text" type="button">Paste text</button>
+        </div>
+
+        <div class="tab-panel is-active" data-panel="bookmarklet">
+          <ol class="steps">
+            <li>Drag this button to your bookmarks bar:</li>
+          </ol>
+          <p class="bookmarklet-row">
+            <a id="bookmarklet-link" class="bookmarklet" href="#" draggable="true">Copy conversation</a>
+            <button class="btn btn-quiet" id="copy-snippet" type="button">Copy snippet for the console</button>
+          </p>
+          <ol class="steps" start="2">
+            <li>Open the conversation in ChatGPT, Claude, Gemini or DeepSeek.</li>
+            <li>Click the bookmark (or paste the snippet into DevTools → Console).</li>
+            <li>The whole chat lands in your clipboard as Markdown. Paste it here to save files:</li>
+          </ol>
+          <button class="btn btn-quiet" id="bookmarklet-to-text" type="button">Paste the captured text here</button>
+        </div>
+
+        <div class="tab-panel" data-panel="html">
+          <ol class="steps">
+            <li>Open the conversation, scroll to the first message so everything renders.</li>
+            <li>Press <kbd>Ctrl</kbd>+<kbd>S</kbd> and save as “Webpage, HTML only”.</li>
+            <li>Drop the file below (or paste its source).</li>
+          </ol>
+          <div class="drop-zone" id="drop-zone">
+            <input type="file" id="html-file" accept=".html,.htm,text/html" hidden />
+            <p><strong>Drop the saved .html file here</strong> or <button class="linkish" id="pick-file" type="button">choose a file</button></p>
+            <p class="muted" id="html-file-name">No file selected</p>
+          </div>
+          <label class="field-label" for="html-text">…or paste the page source</label>
+          <textarea id="html-text" rows="4" placeholder="&lt;!doctype html&gt;…" spellcheck="false"></textarea>
+          <div class="panel-actions">
+            <button class="btn btn-primary" id="html-extract" type="button">Extract from HTML</button>
+          </div>
+        </div>
+
+        <div class="tab-panel" data-panel="text">
+          <p class="muted">
+            Paste anything with speaker labels — “You said:”, “ChatGPT said:”, “User:”, “Assistant:”, or the Markdown this app
+            exports. Unlabeled text is kept as a single message.
+          </p>
+          <textarea id="text-input" rows="8" placeholder="You said:&#10;…&#10;&#10;ChatGPT said:&#10;…" spellcheck="false"></textarea>
+          <div class="panel-actions">
+            <button class="btn btn-primary" id="text-extract" type="button">Build conversation</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Runs on your machine · <span id="footer-origin">127.0.0.1</span> · Nothing is uploaded anywhere.</p>
+    </footer>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
