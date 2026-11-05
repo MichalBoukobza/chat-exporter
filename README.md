@@ -161,3 +161,10 @@ Extraction is layered, and each layer is recorded so the UI can show what ran:
 npm install  
 npm test  
 `  
+ 
+## Local development 
+ 
+```powershell 
+npm install 
+npm test 
+``` 
